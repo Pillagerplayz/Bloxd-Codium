@@ -1,0 +1,18 @@
+Metadata-Version: 2.1
+Name: gpt4all
+Version: 0.1.7
+Summary: Python bindings for GPT4All
+Home-page: https://pypi.org/project/gpt4all/
+Author: Richard Guo
+Author-email: richard@nomic.ai
+License: UNKNOWN
+Platform: UNKNOWN
+Classifier: Programming Language :: Python :: 3
+Classifier: License :: OSI Approved :: MIT License
+Classifier: Operating System :: OS Independent
+Requires-Python: >=3.8
+License-File: LICENSE.txt
+Requires-Dist: pytest (==7.3.1)
+
+UNKNOWN
+

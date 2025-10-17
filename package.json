@@ -1,0 +1,58 @@
+{
+  "name": "bloxd-codium",
+  "version": "1.0.0",
+  "description": "Bloxd Codium is a lightweight Bloxd.io code editor that has linting and syntax highlighting.",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "NODE_ENV=development; electron .",
+    "build": "electron-builder",
+    "dist": "electron-builder --publish=never"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "dependencies": {
+    "@electron/remote": "^2.1.3",
+    "axios": "^1.12.1",
+    "codemirror": "^6.0.2",
+    "dotenv": "^17.2.2",
+    "eslint": "^9.35.0",
+    "monaco-editor": "^0.53.0",
+    "prismjs": "^1.30.0"
+  },
+  "devDependencies": {
+    "electron": "38.0.0"
+  },
+  "build": {
+    "appId": "com.bloxd.codium",
+    "productName": "Bloxd Codium",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "**/*",
+      "!**/*.ts",
+      "!*.code-workspace",
+      "!LICENSE.md",
+      "!package.json",
+      "!.gitignore",
+      "!.env",
+      "!.venv/",
+      "!node_modules/*"
+    ],
+    "win": {
+      "icon": "assets/icons/win/icon.ico",
+      "target": "nsis"
+    },
+    "mac": {
+      "icon": "assets/icons/icons/mac/icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "linux": {
+      "icon": "assets/icons/icons/png/256x256.png",
+      "category": "Development"
+    }
+  }
+}

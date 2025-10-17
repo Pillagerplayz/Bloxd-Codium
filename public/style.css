@@ -1,0 +1,391 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+#app {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.top-bar {
+    -webkit-app-region: drag;
+    color: white;
+    font-family: Arial, Helvetica, sans-serif;
+    font-size: 14px;
+    background-color: #1e1e1e;
+    height: 30px;
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 10px;
+    flex-shrink: 0;
+}
+
+.top-bar #app-title {
+    -webkit-app-region: drag;
+    flex: 1;
+    margin: 0;
+    padding: 0;
+}
+
+.window-controls {
+    -webkit-app-region: no-drag;
+    display: flex;
+    align-items: center;
+    gap: 0;
+}
+
+.top-bar button {
+    -webkit-app-region: no-drag;
+    background: none;
+    border: none;
+    color: white;
+    width: 30px;
+    height: 20px;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+}
+
+.top-bar button:hover {
+    background-color: #404040;
+}
+
+.top-bar #close-btn:hover {
+    background-color: #e74c3c;
+}
+
+.header {
+    background-color: #282b2f;
+    font-family: Arial, Helvetica, sans-serif;
+    text-align: left;
+    width: 100%;
+    margin: 0;
+    padding: 10px 0;
+    display: flex;
+    align-items: center;
+    position: relative;
+    flex-shrink: 0;
+}
+
+.header .logo {
+    width: 150px;
+    height: auto;
+    display: block;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.dropdown {
+    position: relative;
+    display: inline-block;
+    margin-right: 10px;
+}
+
+.dropdown .dropbtn {
+    background-color: transparent;
+    color: white;
+    padding: 10px 20px;
+    font-size: 16px;
+    border: none;
+    border-radius: 4px;
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: #201c1c;
+    min-width: 160px;
+    white-space: nowrap;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 100;
+}
+
+.dropdown-content a {
+    color: white;
+    padding: 10px 20px;
+    text-decoration: none;
+    display: block;
+    white-space: nowrap;
+}
+
+.dropdown-content a:hover {
+    background-color: #404040;
+}
+
+.dropbtn:hover {
+    background-color: #404040;
+}
+
+.container {
+    display: flex;
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+}
+
+.code-editor {
+    flex: 1;
+    background-color: #1e1e1e;
+    color: white;
+    padding: 10px;
+    font-family: 'Courier New', Courier, monospace;
+    overflow: auto;
+    max-width: 70%;
+}
+
+#editor {
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    overflow: hidden !important;
+}
+
+.code-editor .monaco-editor {
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+}
+
+/* Monaco widgets */
+.monaco-editor .hover-widget {
+    z-index: 9999 !important;
+    background: #252526 !important;
+    border: 1px solid #454545 !important;
+    border-radius: 3px !important;
+}
+
+.monaco-editor .suggest-widget {
+    z-index: 9998 !important;
+    background: #252526 !important;
+    border: 1px solid #454545 !important;
+    border-radius: 3px !important;
+}
+
+.monaco-editor .parameter-hints-widget {
+    z-index: 9997 !important;
+    background: #252526 !important;
+    border: 1px solid #454545 !important;
+    border-radius: 3px !important;
+}
+
+/* SIMPLE SCROLLBAR STYLING - Fix Monaco's dynamic style changes */
+.monaco-editor .scrollbar {
+    background: rgba(42, 42, 42, 1) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.monaco-editor .scrollbar.vertical {
+    width: 25px !important;
+    background: rgba(42, 42, 42, 1) !important;
+}
+
+.monaco-editor .scrollbar.horizontal {
+    height: 25px !important;
+    background: rgba(42, 42, 42, 1) !important;
+}
+
+.monaco-editor .scrollbar .slider {
+    background: #79797966 !important;
+    opacity: 1 !important;
+}
+
+.monaco-editor .scrollbar .slider:hover {
+    background: #646464B3 !important;
+}
+
+/* CRITICAL: Override Monaco's fade behavior and dynamic inline styles */
+.monaco-editor .monaco-scrollable-element > .scrollbar {
+    opacity: 1 !important;
+    visibility: visible !important;
+    background: rgba(42, 42, 42, 1) !important;
+    transition: none !important;
+}
+
+.monaco-editor .monaco-scrollable-element > .scrollbar.fade {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.monaco-editor .monaco-scrollable-element > .scrollbar.vertical {
+    width: 25px !important;
+    background: rgba(42, 42, 42, 1) !important;
+}
+
+.monaco-editor .monaco-scrollable-element > .scrollbar.horizontal {
+    height: 25px !important;
+    background: rgba(42, 42, 42, 1) !important;
+}
+
+/* FORCE SCROLLBAR STYLING TO PERSIST - Override all Monaco states */
+.monaco-editor .scrollbar,
+.monaco-editor.focused .scrollbar,
+.monaco-editor:focus .scrollbar,
+.monaco-editor .scrollbar:focus,
+.monaco-editor .scrollbar.active,
+.monaco-editor .scrollbar[style*="opacity"],
+.monaco-editor .scrollbar[style*="visibility"] {
+    background: rgba(42, 42, 42, 1) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.monaco-editor .scrollbar.vertical,
+.monaco-editor.focused .scrollbar.vertical,
+.monaco-editor:focus .scrollbar.vertical,
+.monaco-editor .scrollbar.vertical:focus,
+.monaco-editor .scrollbar.vertical.active {
+    width: 25px !important;
+    background: rgba(42, 42, 42, 1) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.monaco-editor .scrollbar.horizontal,
+.monaco-editor.focused .scrollbar.horizontal,
+.monaco-editor:focus .scrollbar.horizontal,
+.monaco-editor .scrollbar.horizontal:focus,
+.monaco-editor .scrollbar.horizontal.active {
+    height: 25px !important;
+    background: rgba(42, 42, 42, 1) !important;
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+/* NEON SCROLLBAR - Fix Monaco's dynamic style changes */
+.monaco-editor.neon-scrollbar .scrollbar {
+    background: rgba(0, 30, 60, 1) !important;
+}
+
+.monaco-editor.neon-scrollbar .scrollbar .slider {
+    background: linear-gradient(135deg, #00FFFF, #0080FF) !important;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.6) !important;
+}
+
+.monaco-editor.neon-scrollbar .scrollbar .slider:hover {
+    background: linear-gradient(135deg, #40FFFF, #20A0FF) !important;
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.8) !important;
+}
+
+/* CRITICAL: Override Monaco's fade behavior for neon scrollbar */
+.monaco-editor.neon-scrollbar .monaco-scrollable-element > .scrollbar {
+    opacity: 1 !important;
+    visibility: visible !important;
+    background: rgba(0, 30, 60, 1) !important;
+    transition: none !important;
+}
+
+.monaco-editor.neon-scrollbar .monaco-scrollable-element > .scrollbar.fade {
+    opacity: 1 !important;
+    visibility: visible !important;
+}
+
+.monaco-editor.neon-scrollbar .monaco-scrollable-element > .scrollbar.vertical {
+    width: 25px !important;
+    background: rgba(0, 30, 60, 1) !important;
+}
+
+.monaco-editor.neon-scrollbar .monaco-scrollable-element > .scrollbar.horizontal {
+    height: 25px !important;
+    background: rgba(0, 30, 60, 1) !important;
+}
+
+/* MINIMAP */
+.monaco-editor .minimap {
+    background-color: #1E1E1E !important;
+    border-left: 1px solid #3E3E42 !important;
+}
+
+/* Hide scrollbars in Monaco popup widgets */
+.monaco-editor .suggest-widget .monaco-scrollable-element > .scrollbar,
+.monaco-editor .hover-contents .monaco-scrollable-element > .scrollbar,
+.monaco-editor .parameter-hints-widget .monaco-scrollable-element > .scrollbar,
+.monaco-editor .context-view .monaco-scrollable-element > .scrollbar,
+.monaco-editor .monaco-menu .monaco-scrollable-element > .scrollbar,
+.monaco-editor .quick-input-widget .monaco-scrollable-element > .scrollbar,
+.monaco-editor .monaco-hover .monaco-scrollable-element > .scrollbar,
+.monaco-editor .editor-widget .monaco-scrollable-element > .scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* Hide scrollbars in all Monaco popup containers */
+.suggest-widget .monaco-scrollable-element > .scrollbar,
+.hover-contents .monaco-scrollable-element > .scrollbar,
+.parameter-hints-widget .monaco-scrollable-element > .scrollbar,
+.context-view .monaco-scrollable-element > .scrollbar,
+.monaco-menu .monaco-scrollable-element > .scrollbar,
+.quick-input-widget .monaco-scrollable-element > .scrollbar,
+.monaco-hover .monaco-scrollable-element > .scrollbar,
+.editor-widget .monaco-scrollable-element > .scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+    opacity: 0 !important;
+    visibility: hidden !important;
+}
+
+/* Ensure popup content doesn't rely on scrollbars */
+.suggest-widget .monaco-scrollable-element,
+.hover-contents .monaco-scrollable-element,
+.parameter-hints-widget .monaco-scrollable-element,
+.context-view .monaco-scrollable-element,
+.monaco-menu .monaco-scrollable-element,
+.quick-input-widget .monaco-scrollable-element,
+.monaco-hover .monaco-scrollable-element,
+.editor-widget .monaco-scrollable-element {
+    overflow: hidden !important;
+}
+
+.monaco-editor .minimap-slider {
+    background-color: #264F7866 !important;
+}
+
+.monaco-editor .minimap-slider:hover {
+    background-color: #264F78BB !important;
+}
+
+#file-explorer {
+    padding-left: 10px;
+    font-family: system-ui;
+    color: white;
+    background-color: rgba(15, 27, 33, 1);
+}
+
+#file-explorer #file-list {
+    list-style-type: none;
+    padding: 0;
+    margin: 0;
+    max-height: 100%;
+    overflow-y: auto;
+}
+
+#file-explorer #file-list li {
+    padding: 8px 12px;
+    cursor: pointer;
+    border-bottom: 1px solid #333;
+}

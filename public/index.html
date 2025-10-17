@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bloxd Codium: Bloxd Code Editor v1.0</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+</head>
+<body>
+    <div id="app">
+        <div class="top-bar">
+            <p id="app-title">Bloxd Codium v1.0</p>
+            <div class="window-controls">
+                <button id="min-btn" title="Minimize"><i class="fas fa-minus"></i></button>
+                <button id="max-btn" title="Maximize"><i class="fas fa-window-maximize"></i></button>
+                <button id="close-btn" title="Close"><i class="fas fa-xmark"></i></button>
+            </div>
+        </div>
+        <div class="header">
+            <img class="logo" src="../assets/logo.png" alt="Bloxd Codium Logo" />
+            <div class="dropdown">
+                <button class="dropbtn">File</button>
+                <div class="dropdown-content">
+                    <a href="#" id="new-file">New File</a>
+                    <a href="#" id="open-file">Open File</a>
+                    <a href="#" id="save-file">Save File</a>
+                    <a href="#" id="save-as-file">Save As</a>
+                </div>
+            </div>
+            <div class="dropdown">
+                <button class="dropbtn">Edit</button>
+                <div class="dropdown-content">
+                    <a href="#" id="undo">Undo</a>
+                    <a href="#" id="redo">Redo</a>
+                    <a href="#" id="find">Find</a>
+                    <a href="#" id="replace">Replace</a>
+                </div>
+            </div>
+        </div>
+        <div class="container">
+            <div id="file-explorer" class="file-explorer">
+                <h3>File Explorer</h3>
+                <ul id="file-list">
+                    <li>Hello</li>
+                </ul>
+            </div>
+            <div id="editor" class="code-editor"></div>
+        </div>
+    </div>
+    
+    <script src="../src/editor.js"></script>
+</body>
+</html>
