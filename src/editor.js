@@ -799,19 +799,6 @@ greetUser("Developer");
         updateLineNumbers();
     }
 
-    function updateTitle() {
-        const title = document.getElementById('app-title');
-        if (title) {
-            let fileName = currentFile ? currentFile.split(/[\\\/]/).pop() : '';
-            const modified = isModified ? ' •' : '';
-            if (fileName) {
-                title.textContent = `${fileName}${modified} - Bloxd Codium v1.0`;
-            } else {
-                title.textContent = `Bloxd Codium v1.0${modified}`;
-            }
-        }
-    }
-
     function setupFileOperations() {
         try {
             const { dialog } = require('@electron/remote');
@@ -968,6 +955,22 @@ greetUser("Developer");
         return languages[ext] || 'plaintext';
     }
 
+    // Update the window/app title and header title element
+    function updateTitle() {
+        try {
+            const base = 'Bloxd Codium v1.0';
+            const fileName = currentFile ? path.basename(currentFile) : 'Untitled';
+            const modifiedMark = isModified ? '*' : '';
+            const full = `${fileName}${modifiedMark} - ${base}`;
+
+            const titleEl = document.getElementById('app-title');
+            if (titleEl) titleEl.textContent = full;
+            if (typeof document !== 'undefined') document.title = full;
+        } catch (err) {
+            // Fail silently if DOM not available
+        }
+    }
+
     function updateMaximizeIcon(isMaximized) {
         const maxBtn = document.getElementById("max-btn");
         const icon = maxBtn?.querySelector('i');
@@ -1029,21 +1032,22 @@ greetUser("Developer");
         });
     }
 
-    function initialize() {
-        console.log('🚀 Initializing Bloxd Codium...');
-        
+    const projectCreationBtn = document.getElementById('new-project');
+    projectCreationBtn?.addEventListener('click', (e) => {
+        e?.preventDefault();
+        // Use a clear IPC channel; main process can decide how to show/create the modal
+        ipcRenderer.send('show-project-creation');
+    });
+
+    try {
         setupWindowControls();
-        setupDropdowns(); 
+        setupDropdowns();
         setupResizeHandler();
         initializeMonacoEditor();
-        
-        console.log('✅ Bloxd Codium initialization started');
-    }
-
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', initialize);
-    } else {
-        initialize();
+        updateTitle();
+    } catch (e) {
+        // Fail silently in case functions are not available
+        console.error('Initialization error:', e);
     }
 
 })();

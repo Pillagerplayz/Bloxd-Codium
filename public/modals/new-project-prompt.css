@@ -1,0 +1,116 @@
+/* Improved New Project modal styles: stronger overlay, clearer content, and close button on the opposite side */
+
+/* Modal overlay */
+.np-modal, #new-project-modal {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, 0.68); /* stronger dim */
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+/* Modal content container */
+.np-content, .np-modal > div, #new-project-modal > .np-content {
+  width: 520px;
+  max-width: calc(100% - 48px);
+  background: linear-gradient(180deg, #1b1b1b 0%, #222428 100%);
+  color: #e6e6e6;
+  padding: 0;
+  border-radius: 10px;
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.03);
+  overflow: hidden;
+  font-family: Consolas, Monaco, 'Courier New', monospace;
+}
+
+/* Header: makes title prominent and places the X on the left by default */
+.np-content .np-header,
+#modal-header {
+  display: flex;
+  align-items: center;
+  height: 48px;
+  padding: 0 12px;
+  background: linear-gradient(180deg, #2f2f33 0%, #262626 100%);
+  border-bottom: 1px solid rgba(255,255,255,0.04);
+}
+
+/* Title text centered and visually strong */
+.np-content .np-header h3,
+#modal-header h3 {
+  flex: 1 1 auto;
+  text-align: center;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #ffffff;
+  letter-spacing: 0.2px;
+  -webkit-app-region: drag;
+}
+
+/* Close button placed on LEFT (opposite side) by default */
+.np-content .np-header .close-modal,
+#modal-header .close-modal {
+  -webkit-app-region: no-drag;
+  order: 0; /* ensure it comes before the title */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255,255,255,0.03);
+  border: none;
+  color: #f0f0f0;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 6px 8px;
+  border-radius: 6px;
+  margin-right: 12px; /* gap between X and title */
+  transition: background 120ms ease, color 120ms ease, transform 80ms ease;
+}
+
+.np-content .np-header .close-modal:hover,
+#modal-header .close-modal:hover {
+  background: rgba(255,255,255,0.06);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.np-content .np-header .close-modal:active,
+#modal-header .close-modal:active {
+  transform: translateY(0);
+}
+
+/* If you want the close button on the RIGHT, add the class .close-right to the button */
+.np-content .np-header .close-modal.close-right,
+#modal-header .close-modal.close-right {
+  order: 2;
+  margin-left: 12px;
+  margin-right: 0;
+}
+
+/* Body and form spacing */
+.np-content .np-body,
+.np-content > .np-body {
+  padding: 16px 16px 20px 16px;
+  font-size: 13px;
+  color: #ddd;
+}
+
+.np-content label { display:block; margin-top:8px; margin-bottom:6px; color:#cfcfcf; }
+.np-content input { width:100%; padding:8px; background:#1f1f20; color:#eee; border:1px solid #333; border-radius:6px; }
+
+.np-path-row { display:flex; gap:8px; align-items:center; margin-top:6px; }
+.np-path-row input { flex:1; }
+
+.np-actions { text-align:right; margin-top:14px; }
+.np-actions button { margin-left:8px; padding:8px 12px; border-radius:6px; border:none; cursor:pointer; background:#2d8cf0; color:white; }
+.np-actions button:hover { background:#1f6fd1; }
+
+.np-status { margin-top:8px; color:#f88; min-height:20px; }
+
+/* Small-screen tweak */
+@media (max-width: 520px) {
+  .np-content { width: calc(100% - 24px); }
+  .np-content .np-header h3 { font-size: 15px; }
+}

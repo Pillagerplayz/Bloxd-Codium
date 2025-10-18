@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Project - Bloxd Codium</title>
+    <link rel="stylesheet" href="../style.css">
+    <link rel="stylesheet" href="../modals/new-project-prompt.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+</head>
+<body>
+  <div id="new-project-modal" class="np-modal">
+    <div class="np-content">
+      <div class="np-header" id="modal-header">
+        <button id="close-modal" class="close-modal" title="Close"><i class="fas fa-xmark"></i></button>
+        <h3>Create New Project</h3>
+      </div>
+
+      <div class="np-body">
+        <label for="np-name">Project name</label>
+        <input id="np-name" type="text" placeholder="My Bloxd Project" />
+
+        <label for="np-path">Location</label>
+        <div class="np-path-row">
+          <input id="np-path" type="text" placeholder="C:\\Projects\\MyBloxdProject" />
+          <button id="np-browse" type="button">Browse</button>
+        </div>
+
+        <div class="np-actions">
+          <button id="np-cancel" type="button">Cancel</button>
+          <button id="np-create" type="button">Create</button>
+        </div>
+
+        <div id="np-status" class="np-status"></div>
+      </div>
+    </div>
+  </div>
+
+  <script src="new-project-prompt.js"></script>
+</body>
+</html>
