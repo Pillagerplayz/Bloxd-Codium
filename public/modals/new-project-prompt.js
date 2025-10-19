@@ -1,6 +1,4 @@
-// Modal script: handle close, cancel, browse and create
 (function() {
-  // Obtain ipcRenderer robustly (supporting different require environments)
   let ipcRenderer = null;
   try {
     if (typeof window !== 'undefined' && window.require && typeof window.require === 'function') {

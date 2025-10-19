@@ -1,9 +1,9 @@
 const { app, BrowserWindow, ipcMain, Menu, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const modalManager = require('./src/modalManager');
 
 let mainWindow;
-let projectWindow = null;
 
 function createWindow() {
   // Create the browser window
@@ -55,45 +55,6 @@ function createWindow() {
   });
 };
 
-function createProjectCreationModal() {
-  // If already created, just show it
-  if (projectWindow) {
-    try { projectWindow.show(); } catch (e) { /* ignore */ }
-    return projectWindow;
-  }
-
-  projectWindow = new BrowserWindow({
-    parent: mainWindow,
-    modal: true,
-    show: false,
-    width: 460,
-    height: 320,
-    resizable: false,
-    maximizable: false,
-    minimizable: false,
-    frame: false,
-    titleBarStyle: 'hidden',
-    webPreferences: {
-      nodeIntegration: true,
-      contextIsolation: false
-    }
-  });
-
-  // Load the modal HTML file using an absolute path
-  projectWindow.loadFile(path.join(__dirname, 'public', 'modals', 'new-project-prompt.html'));
-
-  // Use the real ready-to-show event
-  projectWindow.once('ready-to-show', () => {
-    projectWindow.show();
-  });
-
-  projectWindow.on('closed', () => {
-    projectWindow = null;
-  });
-
-  return projectWindow;
-}
-
 // This method will be called when Electron has finished initialization
 app.whenReady().then(() => {
   createWindow();
@@ -111,7 +72,7 @@ app.whenReady().then(() => {
 ipcMain.on('show-project-creation', () => {
   // Ensure main window exists before creating a modal
   if (!mainWindow) return;
-  createProjectCreationModal();
+  modalManager.createProjectCreationModal(mainWindow);
 });
 
 // Quit when all windows are closed, except on macOS
@@ -152,10 +113,7 @@ ipcMain.on('window-close', () => {
 });
 
 ipcMain.on('close-project-modal', () => {
-  if (projectWindow) {
-    try { projectWindow.close(); } catch (e) { /* ignore */ }
-    projectWindow = null;
-  }
+  modalManager.closeProjectModal();
 });
 
 ipcMain.handle('show-open-folder-dialog', async () => {
@@ -177,12 +135,7 @@ ipcMain.handle('create-project', async (event, { name, folder }) => {
     if (fs.existsSync(projectPath)) {
       return { success: false, message: 'Project folder already exists' };
     }
-    fs.mkdirSync(projectPath, { recursive: true });
-    // Create a minimal README and package.json
-    fs.writeFileSync(path.join(projectPath, 'README.md'), `# ${name}\nCreated by Bloxd Codium`);
-    const pkg = { name: name.toLowerCase().replace(/[^a-z0-9-_]/g, '-'), version: '0.0.0' };
-    fs.writeFileSync(path.join(projectPath, 'package.json'), JSON.stringify(pkg, null, 2));
-
+    fs.mkdirSync(projectPath);
     return { success: true, path: projectPath };
   } catch (err) {
     return { success: false, message: err.message };

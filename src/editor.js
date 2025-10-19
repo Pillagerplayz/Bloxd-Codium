@@ -1,8 +1,43 @@
+const { start } = require('repl');
+
 (function() {
     const { ipcRenderer } = require('electron');
     const path = require('path');
     const fs = require('fs');
-    
+
+    const linter = {
+        lint(text) {
+            if (!text) return [];
+            const lines = String(text).split('\n');
+            const results = [];
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                const ln = i + 1;
+
+                const varMatch = line.match(/\bvar\s+\w+/);
+                if (varMatch) {
+                    const idx = line.indexOf(varMatch[0]);
+                    results.push({ line: ln, column: idx + 1, startLine: ln, startColumn: idx + 1, endLine: ln, endColumn: idx + varMatch[0].length + 1, message: 'Avoid var; use let/const', severity: 'warning', source: 'bloxd-linter' });
+                }
+
+                const commentMatch = line.match(/\/\//);
+                if (commentMatch) {
+                    const idx = line.indexOf(commentMatch[0]);
+                    results.push({ line: ln, column: idx+1, startLine: ln, startColumn: idx + 1, endLine: ln, endColumn: idx + commentMatch[0].length + 1, message: 'Line comments (//) are not allowed in Bloxd scripting. Use block comments (/* */) instead.', severity: 'err', source: 'bloxd-linter' });
+                }
+
+                const asyncAwaitMatch = line.match(/\b(async|await)\b/);
+                if (asyncAwaitMatch) {
+                    const idx = line.indexOf(asyncAwaitMatch[0]);
+                    results.push({ line: ln, column: idx + 1, startLine: ln, startColumn: idx + 1, endLine: ln, endColumn: idx + asyncAwaitMatch[0].length + 1, message: 'Async/await is not allowed in Bloxd scripting.', severity: 'err', source: 'bloxd-linter' });
+                }
+            }
+
+            return results;
+        }
+    };
+
     let monacoEditor = null;
     let currentFile = null;
     let isModified = false;
@@ -521,13 +556,8 @@
                     .monaco-menu .monaco-scrollable-element > .scrollbar,
                     .quick-input-widget .monaco-scrollable-element > .scrollbar,
                     .monaco-hover .monaco-scrollable-element > .scrollbar,
-                    .editor-widget .monaco-scrollable-element > .scrollbar {
-                        display: none !important;
-                        width: 0 !important;
-                        height: 0 !important;
-                        opacity: 0 !important;
-                        visibility: hidden !important;
-                    }
+                    .editor-widget .monaco-scrollable-element > .scrollbar,
+                    .suggest-widget .monaco-scrollable-element > .scrollbar
                 `;
                 
                 // Remove existing override if present
@@ -562,7 +592,8 @@
                     .monaco-menu .monaco-scrollable-element > .scrollbar,
                     .quick-input-widget .monaco-scrollable-element > .scrollbar,
                     .monaco-hover .monaco-scrollable-element > .scrollbar,
-                    .editor-widget .monaco-scrollable-element > .scrollbar
+                    .editor-widget .monaco-scrollable-element > .scrollbar,
+                    .suggest-widget .monaco-scrollable-element > .scrollbar
                 `);
                 popupScrollbars.forEach(scrollbar => {
                     scrollbar.style.setProperty('display', 'none', 'important');
@@ -571,6 +602,27 @@
                     scrollbar.style.setProperty('opacity', '0', 'important');
                     scrollbar.style.setProperty('visibility', 'hidden', 'important');
                 });
+
+                // Also hide scrollbars in problems/markers panels (problems view)
+                try {
+                    const problemSelectors = [
+                        '.markers-panel .monaco-scrollable-element > .scrollbar',
+                        '.problems-panel .monaco-scrollable-element > .scrollbar',
+                        '.marker-widget .monaco-scrollable-element > .scrollbar',
+                        '.problems-view .monaco-scrollable-element > .scrollbar'
+                    ].join(',');
+
+                    const problemScrollbars = document.querySelectorAll(problemSelectors);
+                    problemScrollbars.forEach(sb => {
+                        sb.style.setProperty('display', 'none', 'important');
+                        sb.style.setProperty('width', '0', 'important');
+                        sb.style.setProperty('height', '0', 'important');
+                        sb.style.setProperty('opacity', '0', 'important');
+                        sb.style.setProperty('visibility', 'hidden', 'important');
+                    });
+                } catch (e) {
+                    // ignore
+                }
             }
             
             // Apply styles immediately and after layout
@@ -682,6 +734,145 @@
                 updateTitle();
             });
 
+            // Linter integration: debounce and map results to Monaco markers (supports async linters)
+            (function() {
+                const lintDebounceMs = 300;
+                let lintTimer = null;
+
+                function toMarkerSeverity(sev) {
+                    if (!sev) return monaco.MarkerSeverity.Info;
+                    if (typeof sev === 'number') return sev; // already a Monaco severity
+                    const s = String(sev).toLowerCase();
+                    if (s === 'error' || s === 'err') return monaco.MarkerSeverity.Error;
+                    if (s === 'warning' || s === 'warn') return monaco.MarkerSeverity.Warning;
+                    if (s === 'info' || s === 'information') return monaco.MarkerSeverity.Info;
+                    if (s === 'note' || s === 'hint') return monaco.MarkerSeverity.Hint;
+                }
+
+                // Normalize a single linter result into a standard object
+                function normalizeResult(r) {
+                    if (!r) return null;
+                    // Common aliases
+                    const message = r.message || r.msg || r.text || r.description || '';
+                    const severity = r.severity || r.level || r.type || null;
+
+                    // Range: try several patterns
+                    let startLine = null, startCol = null, endLine = null, endCol = null;
+                    if (r.range) {
+                        // { start:{line,column}, end:{line,column} } or array
+                        const range = r.range;
+                        if (Array.isArray(range) && range.length >= 2) {
+                            const [s, e] = range;
+                            startLine = s.line || s.lineNumber || s.ln || s[0] || null;
+                            startCol = s.column || s.col || s[1] || null;
+                            endLine = e.line || e.lineNumber || e.ln || e[0] || startLine;
+                            endCol = e.column || e.col || e[1] || null;
+                        } else if (range.start && range.end) {
+                            startLine = range.start.line || range.start.lineNumber || null;
+                            startCol = range.start.column || range.start.col || null;
+                            endLine = range.end.line || range.end.lineNumber || null;
+                            endCol = range.end.column || range.end.col || null;
+                        }
+                    }
+
+                    // Legacy single-line/column fields
+                    startLine = startLine || r.startLine || r.line || r.ln || null;
+                    startCol = startCol || r.startColumn || r.column || r.col || null;
+                    endLine = endLine || r.endLine || r.endLineNumber || r.el || startLine;
+                    endCol = endCol || r.endColumn || r.endColumnNumber || r.ec || (startCol ? startCol + 1 : null);
+
+                    return {
+                        message,
+                        severity,
+                        startLine: Number.isFinite(startLine) ? startLine : null,
+                        startCol: Number.isFinite(startCol) ? startCol : null,
+                        endLine: Number.isFinite(endLine) ? endLine : null,
+                        endCol: Number.isFinite(endCol) ? endCol : null,
+                        source: r.source || r.ruleId || r.code || 'linter'
+                    };
+                }
+
+                async function runLinterOnce() {
+                    try {
+                        const model = monacoEditor && monacoEditor.getModel ? monacoEditor.getModel() : null;
+                        if (!model) return;
+                        if (!linter || typeof linter.lint !== 'function') {
+                            // clear existing markers if linter not available
+                            monaco.editor.setModelMarkers(model, 'bloxd-linter', []);
+                            return;
+                        }
+
+                        const text = model.getValue();
+                        let results = null;
+                        try {
+                            results = linter.lint(text);
+                            // support Promise-based linters
+                            if (results && typeof results.then === 'function') {
+                                results = await results;
+                            }
+                        } catch (innerErr) {
+                            console.error('Linter.lint threw', innerErr);
+                            results = [];
+                        }
+
+                        if (!results) results = [];
+                        if (!Array.isArray(results)) {
+                            // try wrapping if single object
+                            if (typeof results === 'object') results = [results];
+                            else results = [];
+                        }
+
+                        // Debug: log raw results when in dev
+                        if (results.length > 0) {
+                            try { console.debug('Linter results sample:', results.slice(0,5)); } catch(e){}
+                        }
+
+                        const markers = [];
+                        for (const raw of results) {
+                            const r = normalizeResult(raw);
+                            if (!r) continue;
+
+                            const startLineNumber = r.startLine || 1;
+                            const startColumn = r.startCol || 1;
+                            const endLineNumber = r.endLine || startLineNumber;
+                            const endColumn = r.endCol || (startColumn + 1);
+
+                            markers.push({
+                                severity: toMarkerSeverity(r.severity),
+                                message: r.message || 'Linter issue',
+                                startLineNumber: Math.max(1, startLineNumber),
+                                startColumn: Math.max(1, startColumn),
+                                endLineNumber: Math.max(1, endLineNumber),
+                                endColumn: Math.max(1, endColumn),
+                                source: r.source || 'linter'
+                            });
+                        }
+
+                        monaco.editor.setModelMarkers(model, 'bloxd-linter', markers);
+                    } catch (e) {
+                        console.error('Linter run failed', e);
+                    }
+                }
+
+                function scheduleLint() {
+                    if (lintTimer) clearTimeout(lintTimer);
+                    lintTimer = setTimeout(runLinterOnce, lintDebounceMs);
+                }
+
+                // Run linter on content changes
+                monacoEditor.onDidChangeModelContent(() => {
+                    scheduleLint();
+                });
+
+                // Run when model changes (file opened)
+                monacoEditor.onDidChangeModel(() => {
+                    scheduleLint();
+                });
+
+                // Initial lint after creation
+                setTimeout(scheduleLint, 150);
+            })();
+            
             // Basic scrollbar style switching (no persistence logic)
             setTimeout(() => {
                 if (monacoEditor) {
@@ -826,92 +1017,19 @@ greetUser("Developer");
                 }
             }
 
-            // File operations
-            document.getElementById('new-file')?.addEventListener('click', () => {
-                setEditorContent('// New file\nconsole.log("Hello, World!");\n');
-                currentFile = null;
-                isModified = false;
-                updateTitle();
-            });
-
-            document.getElementById('open-file')?.addEventListener('click', async () => {
-                try {
-                    const result = await dialog.showOpenDialog({
-                        properties: ['openFile'],
-                        filters: [
-                            { name: 'All Files', extensions: ['*'] },
-                            { name: 'JavaScript', extensions: ['js', 'jsx'] },
-                            { name: 'TypeScript', extensions: ['ts', 'tsx'] },
-                            { name: 'HTML', extensions: ['html', 'htm'] },
-                            { name: 'CSS', extensions: ['css', 'scss'] },
-                            { name: 'JSON', extensions: ['json'] },
-                            { name: 'Text Files', extensions: ['txt', 'md'] }
-                        ]
-                    });
-
-                    if (!result.canceled && result.filePaths.length > 0) {
-                        const filePath = result.filePaths[0];
-                        const content = fs.readFileSync(filePath, 'utf8');
-                        
-                        setEditorContent(content);
-                        currentFile = filePath;
-                        isModified = false;
-                        updateTitle();
-                        
-                        if (monacoEditor) {
-                            const ext = filePath.split('.').pop()?.toLowerCase();
-                            const language = getLanguageFromExtension(ext);
-                            monaco.editor.setModelLanguage(monacoEditor.getModel(), language);
-                        }
+            function setEditorContent(content) {
+                if (monacoEditor) {
+                    monacoEditor.setValue(content);
+                } else {
+                    const fallback = document.getElementById('fallback-editor');
+                    if (fallback) {
+                        fallback.value = content;
+                        // Update line numbers if using fallback
+                        const event = new Event('input');
+                        fallback.dispatchEvent(event);
                     }
-                } catch (error) {
-                    // Silent error handling
-                }
-            });
-
-            document.getElementById('save-file')?.addEventListener('click', async () => {
-                try {
-                    if (currentFile) {
-                        const content = getEditorContent();
-                        fs.writeFileSync(currentFile, content, 'utf8');
-                        isModified = false;
-                        updateTitle();
-                    } else {
-                        saveAsFile();
-                    }
-                } catch (error) {
-                    // Silent error handling
-                }
-            });
-
-            document.getElementById('save-as-file')?.addEventListener('click', saveAsFile);
-
-            async function saveAsFile() {
-                try {
-                    const result = await dialog.showSaveDialog({
-                        filters: [
-                            { name: 'JavaScript', extensions: ['js'] },
-                            { name: 'TypeScript', extensions: ['ts'] },
-                            { name: 'HTML', extensions: ['html'] },
-                            { name: 'CSS', extensions: ['css'] },
-                            { name: 'JSON', extensions: ['json'] },
-                            { name: 'Text Files', extensions: ['txt'] },
-                            { name: 'All Files', extensions: ['*'] }
-                        ]
-                    });
-
-                    if (!result.canceled && result.filePath) {
-                        const content = getEditorContent();
-                        fs.writeFileSync(result.filePath, content, 'utf8');
-                        currentFile = result.filePath;
-                        isModified = false;
-                        updateTitle();
-                    }
-                } catch (error) {
-                    // Silent error handling
                 }
             }
-
             // Edit operations (Monaco only)
             document.getElementById('undo')?.addEventListener('click', () => {
                 if (monacoEditor) {
@@ -1024,12 +1142,186 @@ greetUser("Developer");
         });
     }
 
+    // Sidebar button handlers: toggle .active and ensure editor layout
+    function setupSidebarButtons() {
+        try {
+            const container = document.getElementById('btn-sidebar');
+            if (!container) return;
+            const buttons = Array.from(container.querySelectorAll('a'));
+            buttons.forEach(a => {
+                a.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    buttons.forEach(x => x.classList.remove('active'));
+                    a.classList.add('active');
+
+                    // Basic behavior: ensure editor is visible and layout
+                    const editorEl = document.getElementById('editor');
+                    if (editorEl) editorEl.style.display = '';
+                    if (monacoEditor && typeof monacoEditor.layout === 'function') {
+                        setTimeout(() => monacoEditor.layout(), 50);
+                    }
+                });
+            });
+        } catch (err) {
+            // ignore
+        }
+    }
+
+    // Splitter logic for resizing sidebar/editor
+    function setupSplitter() {
+        try {
+            const splitter = document.getElementById('splitter');
+            const sidebar = document.getElementById('sidebar');
+            const editorEl = document.getElementById('editor');
+            if (!splitter || !sidebar || !editorEl) return;
+
+            // restore saved width
+            try {
+                const w = localStorage.getItem('sidebarWidth');
+                if (w) sidebar.style.width = w;
+            } catch (e) {}
+
+            let isDragging = false;
+            let startX = 0;
+            let startWidth = 0;
+
+            splitter.addEventListener('mousedown', (e) => {
+                isDragging = true;
+                startX = e.clientX;
+                startWidth = sidebar.getBoundingClientRect().width;
+                document.body.style.cursor = 'col-resize';
+                document.body.style.userSelect = 'none';
+            });
+
+            function onMouseMove(e) {
+                if (!isDragging) return;
+                const dx = e.clientX - startX;
+                const containerRect = document.querySelector('.container').getBoundingClientRect();
+                const editorMin = 200; // matches CSS min-width for editor
+                const maxAllowed = Math.min(800, containerRect.width - editorMin - 1); // leave space for splitter
+                const minAllowed = 120;
+                let desired = startWidth + dx;
+                if (desired < minAllowed) desired = minAllowed;
+                if (desired > maxAllowed) desired = maxAllowed;
+                sidebar.style.width = desired + 'px';
+                if (monacoEditor && typeof monacoEditor.layout === 'function') {
+                    monacoEditor.layout();
+                }
+            }
+
+            function onMouseUp() {
+                if (!isDragging) return;
+                isDragging = false;
+                document.body.style.cursor = '';
+                document.body.style.userSelect = '';
+                try { localStorage.setItem('sidebarWidth', sidebar.style.width); } catch (e) {}
+            }
+            
+            document.addEventListener('mousemove', onMouseMove);
+            document.addEventListener('mouseup', onMouseUp);
+        } catch (e) {
+            // ignore
+        }
+    }
+
     function setupResizeHandler() {
         window.addEventListener('resize', () => {
             if (monacoEditor) {
                 setTimeout(() => monacoEditor.layout(), 50);
             }
         });
+    }
+
+    // Collapsible editor state and helpers
+    const savedEditorState = {
+        content: null,
+        language: 'javascript',
+        viewState: null,
+        isCollapsed: false
+    };
+
+    function readEditorContent() {
+        try {
+            if (monacoEditor) return monacoEditor.getValue();
+            const fb = document.getElementById('fallback-editor');
+            return fb ? fb.value : '';
+        } catch (e) {
+            return '';
+        }
+    }
+
+    function collapseEditor() {
+        if (savedEditorState.isCollapsed) return;
+        const editorContainer = document.getElementById('editor');
+
+        // Save current content and view state
+        try { savedEditorState.content = readEditorContent(); } catch (e) { savedEditorState.content = null; }
+        if (monacoEditor) {
+            try { savedEditorState.viewState = monacoEditor.saveViewState(); } catch (e) { savedEditorState.viewState = null; }
+            try { savedEditorState.language = monacoEditor.getModel().getLanguageIdentifier().language; } catch (e) { /* ignore */ }
+            try { monacoEditor.dispose(); } catch (e) { /* ignore */ }
+            monacoEditor = null;
+        }
+
+        if (editorContainer) {
+            // hide the whole editor container to avoid leftover canvas/background
+            editorContainer.style.display = 'none';
+            editorContainer.classList.add('editor-collapsed');
+        }
+
+        savedEditorState.isCollapsed = true;
+    }
+
+    function expandEditor() {
+        if (!savedEditorState.isCollapsed) return;
+        const editorContainer = document.getElementById('editor');
+
+        if (editorContainer) {
+            editorContainer.style.display = '';
+            editorContainer.classList.remove('editor-collapsed');
+        }
+
+        // recreate editor using existing createEditor() logic
+        try {
+            createEditor();
+            if (monacoEditor && savedEditorState.content != null) {
+                const model = monacoEditor.getModel();
+                if (model) model.setValue(savedEditorState.content);
+                try { if (savedEditorState.viewState) monacoEditor.restoreViewState(savedEditorState.viewState); } catch (e) { /* ignore */ }
+                monacoEditor.focus();
+                setTimeout(() => monacoEditor.layout && monacoEditor.layout(), 50);
+            }
+        } catch (e) {
+            // fallback: if createEditor fails, show a simple textarea
+            createFallbackEditor();
+        }
+
+        savedEditorState.isCollapsed = false;
+    }
+
+    function toggleEditor() {
+        if (savedEditorState.isCollapsed) expandEditor(); else collapseEditor();
+    }
+
+    function ensureEditorToggleButton() {
+        let btn = document.getElementById('toggle-editor-btn');
+        if (!btn) {
+            const header = document.querySelector('.header') || document.body;
+            btn = document.createElement('button');
+            btn.id = 'toggle-editor-btn';
+            btn.textContent = 'Hide Editor';
+            btn.style.marginLeft = '8px';
+            btn.style.padding = '6px 10px';
+            btn.style.borderRadius = '6px';
+            btn.style.border = 'none';
+            btn.style.cursor = 'pointer';
+            btn.addEventListener('click', () => {
+                toggleEditor();
+                btn.textContent = savedEditorState.isCollapsed ? 'Show Editor' : 'Hide Editor';
+                setTimeout(() => { if (monacoEditor) try { monacoEditor.layout(); } catch (e) {} }, 120);
+            });
+            header.appendChild(btn);
+        }
     }
 
     const projectCreationBtn = document.getElementById('new-project');
@@ -1043,6 +1335,9 @@ greetUser("Developer");
         setupWindowControls();
         setupDropdowns();
         setupResizeHandler();
+        ensureEditorToggleButton();
+        setupSidebarButtons();
+        setupSplitter();
         initializeMonacoEditor();
         updateTitle();
     } catch (e) {

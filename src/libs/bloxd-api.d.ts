@@ -78,10 +78,9 @@ export class api {
     static setCantChangeBlockRect(playerId: PlayerId, pos1: number[], pos2: number[]): void;
     static resetCanChangeBlockRect(playerId: PlayerId, pos1: number[], pos2: number[]): void;
     static setWalkThroughType(playerId: PlayerId, blockName: string, disable?: boolean): void;
-    static setWalkThroughRect(playerId: PlayerId, pos1: number[], pos2: number[],)
+    static setWalkThroughRect(playerId: PlayerId, pos1: number[], pos2: number[]): void;
 }
 
-// Make api globally available
 declare global {
     var api: {
         getPosition(entityId: EntityId): [number, number, number];
@@ -101,7 +100,7 @@ declare global {
         applyHealthChange(lifeformId: LifeformId, changeAmount: number, whoDidDamage: LifeformId | { lifeformId: LifeformId; withItem: string }, broadcastLifeformHurt: boolean): boolean;
         setHealth(lifeformId: LifeformId, newHealth: PNull<number>, whoDidDamage: LifeformId | { lifeformId: LifeformId; withItem: string }, increaseMaxHealthIfNeeded: boolean): boolean;
         applyMeleeHit(hittingEId: LifeformId, hitEId: LifeformId, dirFacing: number[], bodyPartHit: PNull<PlayerBodyPart>, overrides: MeleeOverides): boolean;
-        attemptApplyDamage(options: PlayerAttemptDamageOtherPlayerOpts): boolean;
+        attemptApplyDamage(opts: PlayerAttemptDamageOtherPlayerOpts): boolean;
         forceRespawn(playerId: PlayerId, respawnPos: number[]): void;
         killLifeform(lifeformId: LifeformId, whoKilled: LifeformId | { lifeformId: LifeformId; withItem: string }): void;
         getCurrentKillstreak(playerId: PlayerId): number;
@@ -136,7 +135,33 @@ declare global {
         getChunk(pos: number[]): PNull<object>;
         getEmptyChunk(): PNull<object>;
         getMetaInfo(blockName: string | null | undefined): object;
-    };
+        blockNameToBlockId(blockName: string, allowInvalidBlock?: boolean): PNull<number>;
+        blockIdToBlockName(blockId: number): PNull<string>;
+        blockCoordToChunkId(pos: number[]): string;
+        chunkIdToBotLeftCoord(chunkId: string): [number, number, number];
+        sendTopRightHelper(playerId: PlayerId, icon: string, text: string, opts: TopRightHelperOpts): void;
+        isMobile(playerId: PlayerId): boolean;
+        createItemDrop(x: number, y: number, z: number, itemName: string, amount?: number, mergeItems?: boolean, attributes?: object, timeTillDespawn?: number): PNull<EntityId>;
+        setCantPickUpItem(playerId: PlayerId, itemId: EntityId): void;
+        deleteItemDrop(itemId: EntityId): void;
+        getInitialItemMetadata(itemName: string): Partial<object & object>;
+        getItemStat(lifeformId: PNull<LifeformId>, itemName: string, stat: K): AnyMetadataItem[K];
+        setCameraDirection(playerId: PlayerId, direction: number[]): void;
+        setPlayerOpacity(playerId: PlayerId, opacity: number): void;
+        setPlayerOpacityForOnePlayer(playerIdWhoViewsOpacityPlayer: PlayerId, playerIdOfOpacityPlayer: PlayerId, opacity: number): void;
+        now(): number;
+        checkValid(entityId?: PNull<EntityId>): boolean;
+        setCanChangeBlock(playerId: PlayerId, x: number, y: number, z: number): void;
+        setCantChangeBlock(playerId: PlayerId, x: number, y: number, z: number): void;
+        setCanChangeBlockType(playerId: PlayerId, blockName: string): void;
+        setCantChangeBlockType(playerId: PlayerId, blockName: string): void;
+        resetCanChangeBlockType(playerId: PlayerId, blockName: string): void;
+        setCanChangeBlockRect(playerId: PlayerId, pos1: number[], pos2: number[]): void;
+        setCantChangeBlockRect(playerId: PlayerId, pos1: number[], pos2: number[]): void;
+        resetCanChangeBlockRect(playerId: PlayerId, pos1: number[], pos2: number[]): void;
+        setWalkThroughType(playerId: PlayerId, blockName: string, disable?: boolean): void;
+        setWalkThroughRect(playerId: PlayerId, pos1: number[], pos2: number[]): void;
+    }
 }
 
 // Re-export everything for module usage

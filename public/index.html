@@ -38,11 +38,21 @@
             </div>
         </div>
         <div class="container">
-            <div id="file-explorer" class="file-explorer">
-                <h3>File Explorer</h3>
-                <ul id="file-list">
-                </ul>
+            <div id="sidebar" class="sidebar">
+                <div id="btn-sidebar" class="btn-sidebar">
+                    <a href="#" id="btn-files" class="active"><i class="fas fa-folder"></i></a>
+                    <a href="#" id="btn-editor-tool"><i class="fas fa-toolbox"></i></a>
+                </div>
+                <div id="sb-content" class="sb-content">
+                    <div id="file-explorer" class="file-explorer">
+                        <div class="explorer-header">
+                            <h4>File Explorer</h4>
+                            <a href="#" id="explorer-options"><i class="fas fa-ellipsis-v"></i></a>
+                        </div>
+                    </div>
+                </div>
             </div>
+            <div id="splitter" class="splitter" aria-hidden="true"></div>
             <div id="editor" class="code-editor"></div>
         </div>
     </div>

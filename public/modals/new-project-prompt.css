@@ -50,11 +50,10 @@
   -webkit-app-region: drag;
 }
 
-/* Close button placed on LEFT (opposite side) by default */
 .np-content .np-header .close-modal,
 #modal-header .close-modal {
   -webkit-app-region: no-drag;
-  order: 0; /* ensure it comes before the title */
+  order: 0;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -81,7 +80,6 @@
   transform: translateY(0);
 }
 
-/* If you want the close button on the RIGHT, add the class .close-right to the button */
 .np-content .np-header .close-modal.close-right,
 #modal-header .close-modal.close-right {
   order: 2;
