@@ -1,8 +1,11 @@
-# Ignore vendored dependencies
+# Exclude all Python files from language stats
+*.py linguist-vendored
+
+# Re-include Python files in your AI module
+src/ai/** linguist-language=Python
+
+# Exclude common dependency folders
 venv/** linguist-vendored
 node_modules/** linguist-vendored
 dist/** linguist-vendored
 build/** linguist-vendored
-
-# Preserve your AI module
-src/ai/** linguist-language=Python
