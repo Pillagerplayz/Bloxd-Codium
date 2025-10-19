@@ -3,6 +3,3 @@ venv/** linguist-vendored
 node_modules/** linguist-vendored
 dist/** linguist-vendored
 build/** linguist-vendored
-
-# Preserve your AI module
-src/ai/** linguist-language=Python
