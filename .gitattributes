@@ -1,11 +1,8 @@
-# Exclude all Python files from language stats
-*.py linguist-vendored
-
-# Re-include Python files in your AI module
-src/ai/** linguist-language=Python
-
-# Exclude common dependency folders
+# Exclude Python files in venv and other folders
 venv/** linguist-vendored
 node_modules/** linguist-vendored
 dist/** linguist-vendored
 build/** linguist-vendored
+
+# Keep your AI module counted
+src/ai/** linguist-language=Python
