@@ -1,7 +1,8 @@
-# Ignore Python and Node junk from language stats
+# Ignore vendored dependencies
 venv/** linguist-vendored
 node_modules/** linguist-vendored
 dist/** linguist-vendored
 build/** linguist-vendored
-*.min.js linguist-generated
-*.py linguist-vendored
+
+# Preserve your AI module
+src/ai/** linguist-language=Python
