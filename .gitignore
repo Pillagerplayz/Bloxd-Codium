@@ -1,3 +1,5 @@
 node_modules/
 .env
 src/ai/
+dist/
+build/

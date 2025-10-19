@@ -1,0 +1,7 @@
+#Ignore node_modules and venv
+node_modules/* linguist-vendored
+venv/* linguist-vendored
+
+#Ignore other auto-generated folders
+dist/* linguist-vendored
+build/* linguist-vendored

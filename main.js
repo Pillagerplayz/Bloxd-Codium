@@ -4,6 +4,27 @@ const fs = require('fs');
 const modalManager = require('./src/modalManager');
 
 let mainWindow;
+let projectWindow = null;
+let remoteMain = null;
+
+try {
+  remoteMain = require('@electron/remote/main');
+  if (remoteMain && typeof remoteMain.initialize === 'function') {
+    remoteMain.initialize();
+  }
+} catch (e) {
+  console.warn('Optional @electron/remote/main not available:', e && e.message ? e.message : e);
+}
+
+// Fallback sync listener for renderer-side @electron/remote calls when remoteMain isn't available
+ipcMain.on('REMOTE_BROWSER_GET_BUILTIN', (event) => {
+  try {
+    // Return null to indicate builtin not available; silences the warning
+    event.returnValue = null;
+  } catch (err) {
+    try { event.returnValue = null; } catch (e) {}
+  }
+});
 
 function createWindow() {
   // Create the browser window
@@ -20,6 +41,11 @@ function createWindow() {
     frame: false, // Remove default title bar since we have custom controls
     titleBarStyle: 'hidden'
   });
+
+  // Enable @electron/remote for this window if available
+  if (remoteMain && typeof remoteMain.enable === 'function') {
+    try { remoteMain.enable(mainWindow.webContents); } catch (e) { console.warn('remoteMain.enable failed:', e && e.message ? e.message : e); }
+  }
 
   // Load the app
   mainWindow.loadFile('public/index.html');
@@ -72,7 +98,11 @@ app.whenReady().then(() => {
 ipcMain.on('show-project-creation', () => {
   // Ensure main window exists before creating a modal
   if (!mainWindow) return;
-  modalManager.createProjectCreationModal(mainWindow);
+  try {
+    modalManager.createProjectCreationModal(mainWindow);
+  } catch (err) {
+    console.error('Error creating project modal:', err && err.stack ? err.stack : err);
+  }
 });
 
 // Quit when all windows are closed, except on macOS
@@ -113,7 +143,11 @@ ipcMain.on('window-close', () => {
 });
 
 ipcMain.on('close-project-modal', () => {
-  modalManager.closeProjectModal();
+  try {
+    modalManager.closeProjectModal();
+  } catch (err) {
+    console.error('Error closing project modal:', err && err.stack ? err.stack : err);
+  }
 });
 
 ipcMain.handle('show-open-folder-dialog', async () => {
