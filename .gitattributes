@@ -1,7 +1,7 @@
-#Ignore node_modules and venv
-node_modules/* linguist-vendored
-venv/* linguist-vendored
-
-#Ignore other auto-generated folders
-dist/* linguist-vendored
-build/* linguist-vendored
+# Ignore Python and Node junk from language stats
+venv/** linguist-vendored
+node_modules/** linguist-vendored
+dist/** linguist-vendored
+build/** linguist-vendored
+*.min.js linguist-generated
+*.py linguist-vendored
