@@ -27,7 +27,7 @@ function createProjectCreationModal(parentWindow) {
     });
 
     // Load modal HTML (path relative to project root)
-    projectWindow.loadFile(path.join(__dirname, '..', 'public', 'modals', 'new-project-prompt.html'));
+    projectWindow.loadFile(path.join(__dirname, '..', 'public', 'modals', 'new-project', 'new-project-prompt.html'));
 
     projectWindow.once('ready-to-show', () => {
         try { projectWindow.show(); } catch (e) { /* ignore */ }

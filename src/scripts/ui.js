@@ -28,23 +28,60 @@ function setupWindowControls() {
 }
 
 function setupDropdowns() {
+    // Close any open dropdowns
+    function closeAllDropdowns() {
+        document.querySelectorAll('.dropdown .dropdown-content').forEach(content => {
+            content.style.display = 'none';
+            const parent = content.closest('.dropdown');
+            const btn = parent && parent.querySelector('.dropbtn');
+            if (btn) btn.setAttribute('aria-expanded', 'false');
+        });
+    }
+
     document.querySelectorAll('.dropdown').forEach(dropdown => {
         const btn = dropdown.querySelector('.dropbtn');
         const content = dropdown.querySelector('.dropdown-content');
         if (!btn || !content) return;
-        let hideTimeout;
-        const show = () => {
-            clearTimeout(hideTimeout);
-            content.style.display = 'block';
-        };
-        const hide = () => {
-            hideTimeout = setTimeout(() => content.style.display = 'none', 100);
-        };
-        btn.addEventListener('click', show);
-        btn.addEventListener('mouseenter', show);
-        btn.addEventListener('mouseleave', hide);
-        content.addEventListener('mouseenter', () => clearTimeout(hideTimeout));
-        content.addEventListener('mouseleave', hide);
+
+        // Ensure ARIA state
+        btn.setAttribute('aria-haspopup', 'true');
+        btn.setAttribute('aria-expanded', 'false');
+
+        // Toggle on click
+        btn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const isVisible = content.style.display === 'block';
+            // close others first
+            closeAllDropdowns();
+            if (!isVisible) {
+                content.style.display = 'block';
+                btn.setAttribute('aria-expanded', 'true');
+            } else {
+                content.style.display = 'none';
+                btn.setAttribute('aria-expanded', 'false');
+            }
+        });
+
+        content.addEventListener('click', (e) => {
+            const actionable = e.target.closest && e.target.closest('a, button, .dropdown-item, [data-dropdown-item]');
+            if (actionable) {
+                setTimeout(() => closeAllDropdowns(), 0);
+                return;
+            }
+            e.stopPropagation();
+        });
+    });
+
+    // Click anywhere else closes open dropdowns
+    document.addEventListener('click', () => {
+        document.querySelectorAll('.dropdown .dropdown-content').forEach(content => content.style.display = 'none');
+    });
+
+    // Press Escape to close
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape' || e.key === 'Esc') {
+            document.querySelectorAll('.dropdown .dropdown-content').forEach(content => content.style.display = 'none');
+        }
     });
 }
 
@@ -52,12 +89,48 @@ function setupSidebarButtons(monacoEditor) {
     try {
         const container = document.getElementById('btn-sidebar');
         if (!container) return;
+
         const buttons = Array.from(container.querySelectorAll('a'));
+        const sbContent = document.querySelector('#sidebar .sb-content');
+        const panes = sbContent ? Array.from(sbContent.children) : [];
+
+        function hideAllPanes() {
+            panes.forEach(p => { p.style.display = 'none'; });
+        }
+
+        function showPane(selectorOrId) {
+            if (!selectorOrId) return false;
+            let el = null;
+            try { el = document.querySelector(selectorOrId); } catch (e) { el = null; }
+            if (!el && selectorOrId && !selectorOrId.startsWith('#')) {
+                try { el = document.getElementById(selectorOrId); } catch (e) { el = null; }
+            }
+            if (el) {
+                el.style.display = '';
+                return true;
+            }
+            return false;
+        }
+
         buttons.forEach(a => {
             a.addEventListener('click', (e) => {
                 e.preventDefault();
                 buttons.forEach(x => x.classList.remove('active'));
                 a.classList.add('active');
+
+                hideAllPanes();
+
+                const target = a.getAttribute('data-target');
+                if (target) {
+                    // try selector first, then id fallback
+                    if (!showPane(target)) {
+                        showPane('#' + target.replace(/^#/, ''));
+                    }
+                } else {
+                    // fallback: show first pane
+                    if (panes[0]) panes[0].style.display = '';
+                }
+
                 const editorEl = document.getElementById('editor');
                 if (editorEl) editorEl.style.display = '';
                 if (monacoEditor && typeof monacoEditor.layout === 'function') {
@@ -65,6 +138,13 @@ function setupSidebarButtons(monacoEditor) {
                 }
             });
         });
+
+        // Initialize: activate first active button or the first button
+        const initial = buttons.find(b => b.classList.contains('active')) || buttons[0];
+        if (initial) {
+            // trigger click without causing double preventDefault issues
+            setTimeout(() => initial.click(), 0);
+        }
     } catch (err) {
         // ignore
     }

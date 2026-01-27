@@ -14,6 +14,27 @@ let monacoEditor = null;
 let currentFile = null;
 let isModified = false;
 
+// Loading overlay state and helpers
+const loadingScreenState = { visible: false };
+function showLoadingScreen(message) {
+    try {
+        loadingScreenState.visible = true;
+        let el = document.getElementById('loading-screen');
+        if (el) {
+            const msgEl = el.querySelector('.loading-message');
+            if (msgEl) msgEl.textContent = message || 'Starting Bloxd Codium...';
+            el.style.display = 'flex';
+        }
+    } catch (e) { /* ignore DOM errors */ }
+}
+function hideLoadingScreen() {
+    try {
+        const el = document.getElementById('loading-screen');
+        if (el) el.style.display = 'none';
+        loadingScreenState.visible = false;
+    } catch (e) { /* ignore */ }
+}
+
 // Saved editor collapsed state and toggle function (used by UI)
 const savedEditorState = { isCollapsed: false };
 try {
@@ -37,11 +58,18 @@ function toggleEditor() {
         if (savedEditorState.isCollapsed) {
             editorEl.style.setProperty('display', 'none', 'important');
             editorEl.style.setProperty('width', '0px', 'important');
-            if (splitterEl) splitterEl.style.setProperty('display', 'none', 'important');
+            // Keep splitter visible so the user can drag to restore/resize
+            if (splitterEl) {
+                splitterEl.style.removeProperty('display');
+                splitterEl.classList.add('splitter-collapsed');
+            }
         } else {
             editorEl.style.removeProperty('display');
             editorEl.style.removeProperty('width');
-            if (splitterEl) splitterEl.style.removeProperty('display');
+            if (splitterEl) {
+                splitterEl.style.removeProperty('display');
+                splitterEl.classList.remove('splitter-collapsed');
+            }
         }
     } catch (e) {
     }
@@ -417,11 +445,11 @@ function createEditor() {
             experimentalWhitespaceRendering: 'off'
         });
         
-
+        
 
         // Set the theme (use the main theme, no need for separate semantic theme)
         monaco.editor.setTheme('bloxd-colorful');
-        
+
         // Force apply custom scrollbar styles after Monaco has loaded
         function forceScrollbarStyles() {
             // Create a new style element with very high specificity
@@ -834,6 +862,9 @@ function createEditor() {
         
         // Setup file operations
         fileOps.setupFileOperations(monacoEditor);
+
+        // Hide the loading screen now that the editor is ready
+        try { hideLoadingScreen(); } catch (e) {}
         
     } catch (error) {
         createFallbackEditor();
@@ -910,6 +941,9 @@ greetUser("Developer");
     
     // Initial line numbers
     updateLineNumbers();
+
+    // Hide the loading screen for fallback editor as well
+    try { hideLoadingScreen(); } catch (e) {}
 }
 
 function getLanguageFromExtension(ext) {
@@ -951,6 +985,9 @@ function updateMaximizeIcon(isMaximized) {
 }
 
 function start() {
+    // show loading immediately while UI and editor initialize
+    try { showLoadingScreen(); } catch (e) {}
+
     ui.setupWindowControls();
     ui.setupDropdowns();
     ui.setupResizeHandler(null);

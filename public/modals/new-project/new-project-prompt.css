@@ -1,6 +1,7 @@
-/* Improved New Project modal styles: stronger overlay, clearer content, and close button on the opposite side */
+* {
+  user-select: none;
+}
 
-/* Modal overlay */
 .np-modal, #new-project-modal {
   position: fixed;
   inset: 0;
@@ -9,6 +10,7 @@
   justify-content: center;
   background: rgba(0, 0, 0, 0.68); /* stronger dim */
   z-index: 9999;
+  -webkit-backdrop-filter: blur(4px);
   backdrop-filter: blur(4px);
 }
 
@@ -106,9 +108,3 @@
 .np-actions button:hover { background:#1f6fd1; }
 
 .np-status { margin-top:8px; color:#f88; min-height:20px; }
-
-/* Small-screen tweak */
-@media (max-width: 520px) {
-  .np-content { width: calc(100% - 24px); }
-  .np-content .np-header h3 { font-size: 15px; }
-}
